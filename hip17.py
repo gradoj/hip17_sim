@@ -64,7 +64,49 @@ class scale_calculator:
 
         self.scale_dict={}
         self.neighdict={}
+        
+    def generate_html(self,h3hex,filename='hip17_nor4.html'):
+        m = folium.Map([43.717899,-79.6582408], tiles='stamentoner', zoom_start=6)
 
+        hotspots=self.df[self.df.hex4 == h3hex]
+        
+        # I can add marker one by one on the map
+        i=0
+        for index, row in hotspots.iterrows():
+
+            scale_factor=self.get_scale(row['hex10'])
+            scale=self.scale_dict
+            #print(scale_factor)
+            #print('scale_dict',self.scale_dict)
+            #print('')
+            
+            total_scale=1.0
+            popuptxt=''
+            for r in range(5,11):
+                popuptxt+=' R'+str(r)+'='+str(round(scale[r]['scale'],3))+','
+                total_scale=total_scale*scale[r]['scale']
+            popuptxt+=' Scaling='+str(total_scale)+','
+            popuptxt+=' Original Scaling='+str(row['scaling'])
+	    #print(row['latitude'], row['longitude'],row['name'])
+            print(row['scaling'],total_scale)
+            if row['scaling']>0.8:
+                color='green'
+            elif row['scaling']>0.2:
+                color='orange'
+            else:
+                color='crimson'
+            folium.Circle(location=[row['latitude'],row['longitude']],
+                          popup=str(row['name']+'\n'+popuptxt),
+                          radius=200*row['scaling'],
+                          color=color,
+                          fill=True,
+                          fill_color=color).add_to(m)
+            i+=1
+            #if i>60:
+            #    break
+         
+        # Save it as html
+        m.save(filename)
     def get_neighbour_hotspots(self,h3hex):
         '''
             input: h3hex
@@ -278,7 +320,10 @@ class scale_calculator:
             if neighbours[key]['occupied']:
                 ncount+=1
         try:
-            target_density=(int(ncount/density[r]['N']) + 1) * density[r]['density_tgt']
+            multiplier = ncount - density[r]['N'] + 1
+            if multiplier <= 0:
+                multiplier = 1.0
+            target_density= multiplier * density[r]['density_tgt']
             if target_density > density[r]['density_max']:
                 target_density = density[r]['density_max']
         except:
@@ -294,7 +339,11 @@ class scale_calculator:
         clipped_num_hs=self._get_num_hotspots(h3hex)
         num_neighbours = self.get_num_neighbours(h3hex)
 
-        target_density=(int(num_neighbours/density[r]['N']) + 1) * density[r]['density_tgt']
+        multiplier = num_neighbours - density[r]['N'] + 1
+        if multiplier <= 0:
+            multiplier = 1.0
+        target_density= multiplier * density[r]['density_tgt']
+   
         if target_density > density[r]['density_max']:
             target_density = density[r]['density_max']
         
