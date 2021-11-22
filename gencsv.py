@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 import h3
 import time
 
+headers = {
+    'User-Agent': 'INSERT_VALID_HEADER_HERE',
+    'From': 'your@email.com'  # This is another valid field
+}
 
 def get_total(addr,days):
     now = datetime.now()# - timedelta(days=7)
@@ -15,7 +19,7 @@ def get_total(addr,days):
     yesterdaystr=str(yesterday.isoformat())
     url = "https://api.helium.io/v1/hotspots/" +str(addr)+ "/rewards/sum" + "?min_time="+yesterdaystr+"&max_time="+nowstr
     #print(url)
-    data=requests.get(url=url)
+    data=requests.get(url=url, headers=headers)
     data=data.json()
     data=data['data']
     total=data['sum']
@@ -31,7 +35,7 @@ def get_total(addr,days):
 
 def download_hotspots(getDateAdded=False,getEarnings=False,days=7):
     url = "https://api.helium.io/v1/hotspots"
-    data=requests.get(url=url)
+    data=requests.get(url=url, headers=headers)
     data=data.json()
     cursor = data['cursor']
     data = data['data']
@@ -42,7 +46,7 @@ def download_hotspots(getDateAdded=False,getEarnings=False,days=7):
     while(cursor):
         hs_count+=1000
         print(hs_count)
-        data=requests.get(url=url+'?cursor='+cursor)
+        data=requests.get(url=url+'?cursor='+cursor, headers=headers)
         data=data.json()
         try:
             cursor = data['cursor']
