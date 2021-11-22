@@ -42,10 +42,12 @@ class scale_calculator:
         # after 3600 blocks with no activity they are removed
 
         #print('block height minimum',self.df['height'].min())
-        inactive_threshold=self.df['height'].max()-3600
+        inactive_threshold=self.df['last_poc_challenge'].max()-3600
         #print('inactive threshold',inactive_threshold)
-        self.df_inactive = self.df[self.df.height < inactive_threshold]
-        self.df = self.df[self.df.height >= inactive_threshold]
+        self.df_inactive = self.df[self.df.last_poc_challenge < inactive_threshold]
+        self.df = self.df[self.df.last_poc_challenge >= inactive_threshold]
+        #self.df = self.df[self.df.scaling != 0]
+        #self.df = self.df[self.df.online == 'online']
 
         self.df.dateadded = pd.to_datetime(self.df['dateadded'], format='%Y-%m-%d %H:%M:%S.%f')
         self.df.set_index(['address'],inplace=True)
@@ -167,6 +169,7 @@ class scale_calculator:
         
     def get_num_neighbours(self,h3hex):
         # pass in hex and get number of occupied neighbour hexes
+        # this can only be used for r10 because no clipping is done
         neighbours = h3.hex_ring(h3hex,k=1)
         h3res=h3.h3_get_resolution(h3hex)
         num_neighbours_target=0
@@ -227,7 +230,7 @@ class scale_calculator:
 
         if h3res == 10:
             clipped=self.get_num_clipped_hotspots(h3hex)
- 
+            densitytarget=clipped
         else:
             # check if there are any hotspots
             try:
@@ -243,6 +246,10 @@ class scale_calculator:
                 total_hotspots=0  
  
             clipped=total_hotspots
+            densitytarget=self.get_num_clipped_hotspots(h3hex)
+
+        if clipped > densitytarget:
+            clipped=densitytarget
             
         return clipped
  
@@ -285,6 +292,9 @@ class scale_calculator:
                 
             densitytarget=self.get_density_max(h3hex)
             clipped=total_hotspots
+
+        if clipped > densitytarget:
+            clipped=densitytarget
             
         # check if this hex is in the family so we can record it
         if h3hex in h3fam:
@@ -306,6 +316,7 @@ class scale_calculator:
 
         return clipped
 
+      
     
     def get_density_max(self,h3hex):
         ''' gets the max density of hotspots in a hex
@@ -320,7 +331,7 @@ class scale_calculator:
             if neighbours[key]['occupied']:
                 ncount+=1
         try:
-            multiplier = ncount - density[r]['N'] + 1
+            multiplier = ncount - density[r]['N'] + 2
             if multiplier <= 0:
                 multiplier = 1.0
             target_density= multiplier * density[r]['density_tgt']
@@ -333,13 +344,22 @@ class scale_calculator:
     
     def get_num_clipped_hotspots(self,h3hex):
         ''' gets the clipped value for input hex
-            returns min(target_density,number_of_hotspots) 
+            returns min(target_density,number_of_hotspots)
+            This is only called for r10 because it used
+            the actual number of hotspots not the clipped number
         '''
         r=h3.h3_get_resolution(h3hex)
         clipped_num_hs=self._get_num_hotspots(h3hex)
-        num_neighbours = self.get_num_neighbours(h3hex)
+        
+        ncount = self.get_num_neighbours(h3hex)
+        
+        #neighbours = self.get_neighbours(h3hex)
+        #ncount=0
+        #for key in neighbours:
+        #    if neighbours[key]['occupied']:
+        #        ncount+=1
 
-        multiplier = num_neighbours - density[r]['N'] + 1
+        multiplier = ncount - density[r]['N'] + 2
         if multiplier <= 0:
             multiplier = 1.0
         target_density= multiplier * density[r]['density_tgt']
@@ -406,11 +426,6 @@ if __name__ == "__main__":
     end = time()
     print(f'It took {end - start} seconds')
 
-    start = time()
-    print('Scale for 8a12ccd5091ffff',sc.get_scale('8a12ccd5091ffff'))
-    print(sc.scale_dict)
-    end = time()
-    print(f'It took {end - start} seconds')
 
 
 

@@ -51,7 +51,7 @@ def get_hotspots(h3hex,kml):
         #pnt.style.iconstyle.icon.href = None
 
     df = sc.get_neighbour_hotspots(h3hex)
-    print('neighbours',df)
+    #print('neighbours',df)
     for index, row in df.iterrows():
         pnt=kml.newpoint(name=row["name"], coords=[(row["longitude"],row["latitude"],row["height"])],extrude=1)
         #pnt.description='Scaling = '+str(row["scaling"])

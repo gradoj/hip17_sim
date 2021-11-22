@@ -60,7 +60,7 @@ def download_hotspots(getDateAdded=False,getEarnings=False,days=7):
     filename="hotspots.csv"#+str(days)+'days_'+str(int(time.time()))+".csv"
     fout=open(filename,"w+")
 
-    fout.write('Name, Latitude, Longitude, Altitude, Address, Earnings, Country, Location, Online, BlockAdded, DateAdded, Scaling, Height, hex4, hex5, hex6, hex7, hex8, hex9, hex10, hex11, hex12\n')
+    fout.write('Name, Latitude, Longitude, Altitude, Address, Earnings, Country, Location, Online, BlockAdded, DateAdded, Scaling, Height, last_poc_challenge, hex4, hex5, hex6, hex7, hex8, hex9, hex10, hex11, hex12\n')
     count=0
     noloccount=0
     print('Processing hotspot data')
@@ -101,10 +101,18 @@ def download_hotspots(getDateAdded=False,getEarnings=False,days=7):
                 height=str(0)
             else:
                 height=str(hotspot['status']['height'])
+
+            if hotspot['last_poc_challenge'] == None:
+                last_poc_challenge=str(0)
+            else:
+                last_poc_challenge=str(hotspot['last_poc_challenge'])
+                
             home_hex={}
             for i in range(4,13,1):
                 home_hex[i]=str(h3.geo_to_h3(hotspot['lat'],hotspot['lng'],i))
-            a=str(hotspot['name']) +','+ str(hotspot['lat']) +','+ str(hotspot['lng'])+','+elevation+','  + addr+','+total+','+country+','+location+','+online+','+block_added+','+date_added+','+scaling+','+height+','+home_hex[4]+','+home_hex[5]+','+home_hex[6]+','+home_hex[7]+','+home_hex[8]+','+home_hex[9]+','+home_hex[10]+','+home_hex[11]+','+home_hex[12]+'\n'
+            a=str(hotspot['name']) +','+ str(hotspot['lat']) +','+ str(hotspot['lng'])+','+elevation+','  + addr+ \
+                ','+total+','+country+','+location+','+online+','+block_added+','+date_added+','+scaling+','+height+','+last_poc_challenge+','+ \
+                home_hex[4]+','+home_hex[5]+','+home_hex[6]+','+home_hex[7]+','+home_hex[8]+','+home_hex[9]+','+home_hex[10]+','+home_hex[11]+','+home_hex[12]+'\n'
             fout.write(a)
             count=count+1
         except KeyError:
@@ -122,4 +130,5 @@ def download_hotspots(getDateAdded=False,getEarnings=False,days=7):
 
     fout.close()
 
-#download_hotspots(getDateAdded=False,getEarnings=False,days=7)
+if __name__ == '__main__':
+    download_hotspots(getDateAdded=False,getEarnings=False,days=7)
